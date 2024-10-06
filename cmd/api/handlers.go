@@ -2,9 +2,11 @@ package main
 
 import (
 	"errors"
-	"memcards.ristomcintosh.com/internal/data"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"memcards.ristomcintosh.com/internal/data"
 
 	"github.com/gorilla/mux"
 )
@@ -28,13 +30,19 @@ func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) GetDeck(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["deckId"]
 
-	deck, err := app.db.GetDeckByID(id)
+	id, err := strconv.Atoi(vars["deckId"])
+
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, "deckId must be a number")
+		return
+	}
+
+	deck, err := app.db.GetDeckByID(uint(id))
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
-			app.notFoundResponse(w, r)
+			app.notFoundResponse(w, r, fmt.Sprintf("Deck: %v not found", id))
 		} else {
 			app.serverErrorResponse(w, r, err)
 		}
@@ -97,19 +105,25 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	// TODO handle error
-	id, _ := strconv.Atoi(vars["deckId"])
 
-	deck, _ := app.db.UpdateDeck(uint(id), input.Name)
+	id, err := strconv.Atoi(vars["deckId"])
 
-	// if deck == nil {
-	// 	w.WriteHeader(http.StatusNotFound)
-	// 	message := fmt.Sprintf("Deck: %v not found", id)
-	// 	json.NewEncoder(w).Encode(APIResponse{
-	// 		Message: message,
-	// 	})
-	// 	return
-	// }
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, "deckId must be a number")
+		return
+	}
+
+	deck, err := app.db.UpdateDeck(uint(id), input.Name)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	if deck == nil {
+		app.notFoundResponse(w, r, fmt.Sprintf("Deck: %v not found", id))
+		return
+	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"deck": deck})
 

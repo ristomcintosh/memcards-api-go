@@ -8,7 +8,7 @@ import (
 
 type DataService interface {
 	GetAllDecks() ([]Deck, error)
-	GetDeckByID(id string) (*Deck, error)
+	GetDeckByID(id uint) (*Deck, error)
 	CreateDeck(name string) (*Deck, error)
 	UpdateDeck(id uint, name string) (*Deck, error)
 	CreateFlashcard(deckId uint, front, back string) (*Flashcard, error)
@@ -24,7 +24,7 @@ func (orm *GormOrm) GetAllDecks() ([]Deck, error) {
 	return decks, result.Error
 }
 
-func (orm *GormOrm) GetDeckByID(id string) (*Deck, error) {
+func (orm *GormOrm) GetDeckByID(id uint) (*Deck, error) {
 	var deck Deck
 
 	err := orm.First(&deck, id).Error
@@ -54,10 +54,17 @@ func (orm *GormOrm) CreateDeck(name string) (*Deck, error) {
 func (orm *GormOrm) UpdateDeck(id uint, name string) (*Deck, error) {
 	deck := Deck{ID: id}
 
-	err := orm.Model(&deck).Update("name", name).Error
+	tx := orm.Model(&deck).Update("name", name)
+
+	err := tx.Error
+	hasChange := tx.RowsAffected > 0
 
 	if err != nil {
 		return nil, err
+	}
+
+	if !hasChange {
+		return nil, nil
 	}
 
 	return &deck, nil
