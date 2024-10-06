@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type envelope map[string]any
@@ -27,4 +30,16 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	}
 
 	return nil
+}
+
+func (app *application) readIDParam(r *http.Request) (int, error) {
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["deckId"])
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }

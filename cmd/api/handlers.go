@@ -2,13 +2,9 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"memcards.ristomcintosh.com/internal/data"
-
-	"github.com/gorilla/mux"
 )
 
 func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
@@ -29,20 +25,18 @@ func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) GetDeck(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
-	id, err := strconv.Atoi(vars["deckId"])
+	deckId, err := app.readIDParam(r)
 
 	if err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, "deckId must be a number")
+		app.notFoundResponse(w, r)
 		return
 	}
 
-	deck, err := app.db.GetDeckByID(uint(id))
+	deck, err := app.db.GetDeckByID(uint(deckId))
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
-			app.notFoundResponse(w, r, fmt.Sprintf("Deck: %v not found", id))
+			app.notFoundResponse(w, r)
 		} else {
 			app.serverErrorResponse(w, r, err)
 		}
@@ -99,21 +93,18 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if input.Name == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("name is required"))
+		app.errorResponse(w, r, http.StatusBadRequest, "name is required")
 		return
 	}
 
-	vars := mux.Vars(r)
-
-	id, err := strconv.Atoi(vars["deckId"])
+	deckId, err := app.readIDParam(r)
 
 	if err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, "deckId must be a number")
+		app.notFoundResponse(w, r)
 		return
 	}
 
-	deck, err := app.db.UpdateDeck(uint(id), input.Name)
+	deck, err := app.db.UpdateDeck(uint(deckId), input.Name)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -121,7 +112,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if deck == nil {
-		app.notFoundResponse(w, r, fmt.Sprintf("Deck: %v not found", id))
+		app.notFoundResponse(w, r)
 		return
 	}
 
@@ -134,9 +125,6 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	deckId, _ := strconv.Atoi(vars["deckId"])
-
 	var input struct {
 		Front string `json:"front"`
 		Back  string `json:"back"`
@@ -146,6 +134,13 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	deckId, err := app.readIDParam(r)
+
+	if err != nil {
+		app.notFoundResponse(w, r)
 		return
 	}
 
