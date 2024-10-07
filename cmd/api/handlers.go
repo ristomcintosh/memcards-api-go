@@ -7,6 +7,8 @@ import (
 	"memcards.ristomcintosh.com/internal/data"
 )
 
+// TODO: Add validation for all inputs
+
 func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
 	decks, err := app.db.GetAllDecks()
 
@@ -64,13 +66,17 @@ func (app *application) CreateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if req.Name == "" {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	w.Write([]byte("name is required"))
-	// 	return
-	// }
+	if input.Name == "" {
+		app.errorResponse(w, r, http.StatusBadRequest, "name is required")
+		return
+	}
 
-	newDeck, _ := app.db.CreateDeck(input.Name)
+	newDeck, err := app.db.CreateDeck(input.Name)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"deck": newDeck})
 
