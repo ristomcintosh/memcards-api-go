@@ -107,13 +107,11 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 	deck, err := app.db.UpdateDeck(uint(deckId), input.Name)
 
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
-	}
-
-	if deck == nil {
-		app.notFoundResponse(w, r)
-		return
+		if errors.Is(err, data.ErrNoRecord) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"deck": deck})
@@ -144,16 +142,16 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	newFlashcard, _ := app.db.CreateFlashcard(uint(deckId), input.Front, input.Back)
+	newFlashcard, err := app.db.CreateFlashcard(uint(deckId), input.Front, input.Back)
 
-	// if deck == nil {
-	// 	w.WriteHeader(http.StatusNotFound)
-	// 	message := fmt.Sprintf("Deck: %v not found", deckId)
-	// 	json.NewEncoder(w).Encode(APIResponse{
-	// 		Message: message,
-	// 	})
-	// 	return
-	// }
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecord) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"flashcard": newFlashcard})
 

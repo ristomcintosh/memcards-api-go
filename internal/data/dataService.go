@@ -57,23 +57,28 @@ func (orm *GormOrm) UpdateDeck(id uint, name string) (*Deck, error) {
 	tx := orm.Model(&deck).Update("name", name)
 
 	err := tx.Error
-	hasChange := tx.RowsAffected > 0
-
 	if err != nil {
 		return nil, err
 	}
 
-	if !hasChange {
-		return nil, nil
+	if tx.RowsAffected == 0 {
+		return nil, ErrNoRecord
 	}
 
 	return &deck, nil
 }
 
 func (orm *GormOrm) CreateFlashcard(deckId uint, front, back string) (*Flashcard, error) {
-	flashcard := Flashcard{Front: front, Back: back, DeckID: deckId}
 
-	err := orm.Create(&flashcard).Error
+	deck, err := orm.GetDeckByID(deckId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	flashcard := Flashcard{Front: front, Back: back, DeckID: deck.ID}
+
+	err = orm.Create(&flashcard).Error
 
 	if err != nil {
 		return nil, err
