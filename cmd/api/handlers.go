@@ -3,8 +3,10 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"memcards.ristomcintosh.com/internal/data"
+	"memcards.ristomcintosh.com/internal/validator"
 )
 
 // TODO: Add validation for all inputs
@@ -66,12 +68,18 @@ func (app *application) CreateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Name == "" {
-		app.errorResponse(w, r, http.StatusBadRequest, "name is required")
+	deck := &data.Deck{
+		Name: strings.TrimSpace(input.Name),
+	}
+
+	v := validator.New()
+
+	if data.ValidateDeck(v, deck); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	newDeck, err := app.db.CreateDeck(input.Name)
+	newDeck, err := app.db.CreateDeck(deck.Name)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -98,8 +106,14 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Name == "" {
-		app.errorResponse(w, r, http.StatusBadRequest, "name is required")
+	deck := &data.Deck{
+		Name: strings.TrimSpace(input.Name),
+	}
+
+	v := validator.New()
+
+	if data.ValidateDeck(v, deck); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
@@ -110,7 +124,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deck, err := app.db.UpdateDeck(uint(deckId), input.Name)
+	updatedDeck, err := app.db.UpdateDeck(uint(deckId), deck.Name)
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
@@ -120,7 +134,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"deck": deck})
+	err = app.writeJSON(w, http.StatusOK, envelope{"deck": updatedDeck})
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

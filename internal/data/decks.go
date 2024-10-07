@@ -2,6 +2,8 @@ package data
 
 import (
 	"time"
+
+	"memcards.ristomcintosh.com/internal/validator"
 )
 
 type Deck struct {
@@ -12,11 +14,8 @@ type Deck struct {
 	UpdatedAt  time.Time   `json:"-"`
 }
 
-type Flashcard struct {
-	ID        uint      `json:"id"`
-	Front     string    `json:"front"`
-	Back      string    `json:"back"`
-	DeckID    uint      `json:"deckId"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+func ValidateDeck(v *validator.Validator, deck *Deck) {
+
+	v.Check(deck.Name != "", "name", "name is required")
+	v.Check(len(deck.Name) >= 3, "name", "name should be at least 3 characters long")
 }
