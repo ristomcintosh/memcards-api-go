@@ -16,6 +16,6 @@ type Deck struct {
 
 func ValidateDeck(v *validator.Validator, deck *Deck) {
 
-	v.Check(deck.Name != "", "name", "name is required")
+	v.Check(deck.Name != "", "name", "Missing field: name is required")
 	v.Check(len(deck.Name) >= 3, "name", "name should be at least 3 characters long")
 }

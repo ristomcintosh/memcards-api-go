@@ -9,8 +9,6 @@ import (
 	"memcards.ristomcintosh.com/internal/validator"
 )
 
-// TODO: Add validation for all inputs
-
 func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
 	decks, err := app.db.GetAllDecks()
 
@@ -162,7 +160,19 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	newFlashcard, err := app.db.CreateFlashcard(uint(deckId), input.Front, input.Back)
+	flashcard := &data.Flashcard{
+		Front:  input.Front,
+		Back:   input.Back,
+		DeckID: uint(deckId),
+	}
+
+	v := validator.New()
+	if data.ValidateFlashcard(v, flashcard); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	newFlashcard, err := app.db.CreateFlashcard(flashcard.DeckID, flashcard.Front, flashcard.Back)
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
