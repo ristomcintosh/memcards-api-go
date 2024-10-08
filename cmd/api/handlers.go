@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
-	decks, err := app.db.GetAllDecks()
+	decks, err := app.models.Deck.GetAll()
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -34,7 +34,7 @@ func (app *application) GetDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deck, err := app.db.GetDeckByID(uint(deckId))
+	deck, err := app.models.Deck.GetByID(uint(deckId))
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
@@ -77,7 +77,7 @@ func (app *application) CreateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newDeck, err := app.db.CreateDeck(deck.Name)
+	newDeck, err := app.models.Deck.Create(deck.Name)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -122,7 +122,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedDeck, err := app.db.UpdateDeck(uint(deckId), deck.Name)
+	updatedDeck, err := app.models.Deck.Update(uint(deckId), deck.Name)
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
@@ -172,7 +172,7 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	newFlashcard, err := app.db.CreateFlashcard(flashcard.DeckID, flashcard.Front, flashcard.Back)
+	newFlashcard, err := app.models.Flashcard.Create(flashcard.DeckID, flashcard.Front, flashcard.Back)
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {

@@ -1,8 +1,10 @@
 package data
 
 import (
+	"errors"
 	"time"
 
+	"gorm.io/gorm"
 	"memcards.ristomcintosh.com/internal/validator"
 )
 
@@ -18,4 +20,54 @@ func ValidateDeck(v *validator.Validator, deck *Deck) {
 
 	v.Check(deck.Name != "", "name", "Missing field: name is required")
 	v.Check(len(deck.Name) >= 3, "name", "name should be at least 3 characters long")
+}
+
+type DeckModel struct {
+	DB *gorm.DB
+}
+
+func (d DeckModel) Create(name string) (*Deck, error) {
+	deck := Deck{Name: name}
+	err := d.DB.Create(&deck).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &deck, nil
+}
+
+func (d DeckModel) Update(id uint, name string) (*Deck, error) {
+	deck := Deck{ID: id}
+
+	tx := d.DB.Model(&deck).Update("name", name)
+
+	err := tx.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &deck, nil
+}
+
+func (d DeckModel) GetAll() ([]Deck, error) {
+	var decks []Deck
+	result := d.DB.Model(&Deck{}).Preload("Flashcards").Find(&decks)
+	return decks, result.Error
+}
+
+func (d DeckModel) GetByID(id uint) (*Deck, error) {
+	var deck Deck
+
+	err := d.DB.First(&deck, id).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return &deck, nil
 }

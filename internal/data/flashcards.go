@@ -3,6 +3,7 @@ package data
 import (
 	"time"
 
+	"gorm.io/gorm"
 	"memcards.ristomcintosh.com/internal/validator"
 )
 
@@ -21,4 +22,21 @@ func ValidateFlashcard(v *validator.Validator, flashcard *Flashcard) {
 	v.Check(len(flashcard.Front) >= 1, "front", "front should have at least 1 character")
 	v.Check(flashcard.Back != "", "back", "Missing field: back is required")
 	v.Check(len(flashcard.Back) >= 1, "back", "back should have at least 1 character")
+}
+
+type FlashcardModel struct {
+	DB *gorm.DB
+}
+
+func (f FlashcardModel) Create(deckId uint, front, back string) (*Flashcard, error) {
+
+	flashcard := Flashcard{Front: front, Back: back, DeckID: deckId}
+
+	err := f.DB.Create(&flashcard).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &flashcard, nil
 }
