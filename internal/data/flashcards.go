@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -30,10 +31,14 @@ type FlashcardModel struct {
 
 func (f FlashcardModel) Create(flashcard *Flashcard) error {
 
-	err := f.DB.Create(&flashcard).Error
+	err := f.DB.Debug().Create(&flashcard).Error
 
 	if err != nil {
-		return err
+		if errors.Is(err, gorm.ErrForeignKeyViolated) {
+			return ErrNoRecord
+		} else {
+			return err
+		}
 	}
 
 	return nil

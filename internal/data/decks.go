@@ -11,7 +11,7 @@ import (
 type Deck struct {
 	ID         uint        `json:"id"`
 	Name       string      `json:"name"`
-	Flashcards []Flashcard `json:"flashcards"`
+	Flashcards []Flashcard `json:"flashcards" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	CreatedAt  time.Time   `json:"-"`
 	UpdatedAt  time.Time   `json:"-"`
 }

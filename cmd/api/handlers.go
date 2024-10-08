@@ -176,7 +176,6 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 
 	err = app.models.Flashcard.Create(flashcard)
 
-	// TODO: Check if this is the correct way to handle ErrNoRecord
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
 			app.notFoundResponse(w, r)
