@@ -26,28 +26,30 @@ type DeckModel struct {
 	DB *gorm.DB
 }
 
-func (d DeckModel) Create(name string) (*Deck, error) {
-	deck := Deck{Name: name}
+func (d DeckModel) Create(deck *Deck) error {
 	err := d.DB.Create(&deck).Error
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &deck, nil
+	return nil
 }
 
-func (d DeckModel) Update(id uint, name string) (*Deck, error) {
-	deck := Deck{ID: id}
+func (d DeckModel) Update(deck *Deck) error {
 
-	tx := d.DB.Model(&deck).Update("name", name)
+	tx := d.DB.Model(&deck).Updates(&deck)
 
 	err := tx.Error
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &deck, nil
+	if tx.RowsAffected == 0 {
+		return ErrNoRecord
+	}
+
+	return nil
 }
 
 func (d DeckModel) GetAll() ([]Deck, error) {

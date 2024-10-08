@@ -28,15 +28,13 @@ type FlashcardModel struct {
 	DB *gorm.DB
 }
 
-func (f FlashcardModel) Create(deckId uint, front, back string) (*Flashcard, error) {
-
-	flashcard := Flashcard{Front: front, Back: back, DeckID: deckId}
+func (f FlashcardModel) Create(flashcard *Flashcard) error {
 
 	err := f.DB.Create(&flashcard).Error
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &flashcard, nil
+	return nil
 }

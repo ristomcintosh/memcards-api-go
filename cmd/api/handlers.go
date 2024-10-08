@@ -77,14 +77,14 @@ func (app *application) CreateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newDeck, err := app.models.Deck.Create(deck.Name)
+	err = app.models.Deck.Create(deck)
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"deck": newDeck})
+	err = app.writeJSON(w, http.StatusCreated, envelope{"deck": deck})
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -97,7 +97,14 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		Name string `json:"name"`
 	}
 
-	err := app.readJSON(w, r, &input)
+	deckId, err := app.readIDParam(r)
+
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.readJSON(w, r, &input)
 
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
@@ -106,6 +113,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 
 	deck := &data.Deck{
 		Name: strings.TrimSpace(input.Name),
+		ID:   uint(deckId),
 	}
 
 	v := validator.New()
@@ -115,14 +123,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deckId, err := app.readIDParam(r)
-
-	if err != nil {
-		app.notFoundResponse(w, r)
-		return
-	}
-
-	updatedDeck, err := app.models.Deck.Update(uint(deckId), deck.Name)
+	err = app.models.Deck.Update(deck)
 
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
@@ -130,9 +131,10 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		} else {
 			app.serverErrorResponse(w, r, err)
 		}
+		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"deck": updatedDeck})
+	err = app.writeJSON(w, http.StatusOK, envelope{"deck": deck})
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -172,8 +174,9 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	newFlashcard, err := app.models.Flashcard.Create(flashcard.DeckID, flashcard.Front, flashcard.Back)
+	err = app.models.Flashcard.Create(flashcard)
 
+	// TODO: Check if this is the correct way to handle ErrNoRecord
 	if err != nil {
 		if errors.Is(err, data.ErrNoRecord) {
 			app.notFoundResponse(w, r)
@@ -183,7 +186,7 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"flashcard": newFlashcard})
+	err = app.writeJSON(w, http.StatusCreated, envelope{"flashcard": flashcard})
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
