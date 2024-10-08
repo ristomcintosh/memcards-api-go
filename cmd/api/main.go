@@ -43,11 +43,6 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-var decks = []data.Deck{
-	{Name: "World Capitals"},
-	{Name: "Basic Portuguese"},
-}
-
 func dbSetup() (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open("test.db?_foreign_keys=on"), &gorm.Config{
 		TranslateError: true,
@@ -56,34 +51,6 @@ func dbSetup() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO move to a "seed" script
-	db.Exec("DROP TABLE decks")
-	db.Exec("DROP TABLE flashcards")
-	db.AutoMigrate(data.Deck{}, data.Flashcard{})
-
-	db.Create(&decks)
-
-	worldCapitals := decks[0]
-	worldCapitalsCards := []data.Flashcard{
-		{Front: "France", Back: "Paris", DeckID: worldCapitals.ID},
-		{Front: "Japan", Back: "Tokyo", DeckID: worldCapitals.ID},
-		{Front: "Italy", Back: "Rome", DeckID: worldCapitals.ID},
-		{Front: "Brazil", Back: "Brasilia", DeckID: worldCapitals.ID},
-		{Front: "Canada", Back: "Ottawa", DeckID: worldCapitals.ID},
-	}
-	db.Create(worldCapitalsCards)
-
-	portugueseBasic := decks[1]
-	portugueseBasicCards := []data.Flashcard{
-		{Front: "Hello", Back: "Olá", DeckID: portugueseBasic.ID},
-		{Front: "Thank you", Back: "Obrigado", DeckID: portugueseBasic.ID},
-		{Front: "Yes", Back: "Sim", DeckID: portugueseBasic.ID},
-		{Front: "No", Back: "Não", DeckID: portugueseBasic.ID},
-		{Front: "Goodbye", Back: "Adeus", DeckID: portugueseBasic.ID},
-	}
-
-	db.Create(portugueseBasicCards)
 
 	return db, nil
 }
