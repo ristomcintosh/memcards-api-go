@@ -278,3 +278,30 @@ func (app *application) UpdateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 }
+
+func (app *application) DeleteFlashcard(w http.ResponseWriter, r *http.Request) {
+	flashcardId, err := app.readIDParam(r, flashcardIdParam)
+
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Flashcard.Delete(uint(flashcardId))
+
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecord) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "flashcard successfully deleted"})
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}

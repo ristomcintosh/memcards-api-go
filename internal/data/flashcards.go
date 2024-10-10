@@ -48,3 +48,17 @@ func (f FlashcardModel) Update(flashcard *Flashcard) error {
 
 	return nil
 }
+
+func (f FlashcardModel) Delete(id uint) error {
+	tx := f.DB.Delete(&Flashcard{}, id)
+
+	if err := tx.Error; err != nil {
+		return processGormError(err)
+	}
+
+	if tx.RowsAffected == 0 {
+		return ErrNoRecord
+	}
+
+	return nil
+}

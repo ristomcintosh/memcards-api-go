@@ -18,6 +18,7 @@ func (app *application) routes() http.Handler {
 	r.HandleFunc("/decks/{deckId}", app.DeleteDeck).Methods(http.MethodDelete)
 	r.HandleFunc("/decks/{deckId}/flashcards", app.CreateFlashcard).Methods(http.MethodPost)
 	r.HandleFunc("/decks/{deckId}/flashcards/{flashcardId}", app.UpdateFlashcard).Methods(http.MethodPut)
+	r.HandleFunc("/decks/{deckId}/flashcards/{flashcardId}", app.DeleteFlashcard).Methods(http.MethodDelete)
 
 	return r
 }
