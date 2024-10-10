@@ -27,7 +27,7 @@ func (app *application) GetDecks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) GetDeck(w http.ResponseWriter, r *http.Request) {
-	deckId, err := app.readIDParam(r)
+	deckId, err := app.readIDParam(r, deckIdParam)
 
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -97,7 +97,7 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 		Name string `json:"name"`
 	}
 
-	deckId, err := app.readIDParam(r)
+	deckId, err := app.readIDParam(r, deckIdParam)
 
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -142,6 +142,33 @@ func (app *application) UpdateDeck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (app *application) DeleteDeck(w http.ResponseWriter, r *http.Request) {
+	deckId, err := app.readIDParam(r, deckIdParam)
+
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Deck.Delete(uint(deckId))
+
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecord) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "deck successfully deleted"})
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
+
 func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Front string `json:"front"`
@@ -155,7 +182,7 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	deckId, err := app.readIDParam(r)
+	deckId, err := app.readIDParam(r, deckIdParam)
 
 	if err != nil {
 		app.notFoundResponse(w, r)
@@ -186,6 +213,65 @@ func (app *application) CreateFlashcard(w http.ResponseWriter, r *http.Request) 
 	}
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"flashcard": flashcard})
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+}
+
+func (app *application) UpdateFlashcard(w http.ResponseWriter, r *http.Request) {
+	deckId, err := app.readIDParam(r, deckIdParam)
+
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	flashcardId, err := app.readIDParam(r, flashcardIdParam)
+
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Front string `json:"front"`
+		Back  string `json:"back"`
+	}
+
+	err = app.readJSON(w, r, &input)
+
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	flashcard := &data.Flashcard{
+		ID:     uint(flashcardId),
+		Front:  input.Front,
+		Back:   input.Back,
+		DeckID: uint(deckId),
+	}
+
+	v := validator.New()
+	if data.ValidateFlashcard(v, flashcard); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Flashcard.Update(flashcard)
+
+	if err != nil {
+		if errors.Is(err, data.ErrNoRecord) {
+			app.notFoundResponse(w, r)
+		} else {
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"flashcard": flashcard})
 
 	if err != nil {
 		app.serverErrorResponse(w, r, err)

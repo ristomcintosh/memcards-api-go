@@ -1,7 +1,6 @@
 package data
 
 import (
-	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -38,15 +37,10 @@ func (d DeckModel) Create(deck *Deck) error {
 
 func (d DeckModel) Update(deck *Deck) error {
 
-	tx := d.DB.Model(&deck).Updates(&deck)
+	err := d.DB.Model(&deck).Updates(&deck).Error
 
-	err := tx.Error
 	if err != nil {
-		return err
-	}
-
-	if tx.RowsAffected == 0 {
-		return ErrNoRecord
+		return processGormError(err)
 	}
 
 	return nil
@@ -64,12 +58,24 @@ func (d DeckModel) GetByID(id uint) (*Deck, error) {
 	err := d.DB.First(&deck, id).Error
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrNoRecord
-		} else {
-			return nil, err
-		}
+		return nil, processGormError(err)
 	}
 
 	return &deck, nil
+}
+
+func (d DeckModel) Delete(id uint) error {
+	tx := d.DB.Delete(&Deck{}, id)
+
+	err := tx.Error
+
+	if err != nil {
+		return err
+	}
+
+	if tx.RowsAffected == 0 {
+		return ErrNoRecord
+	}
+
+	return nil
 }

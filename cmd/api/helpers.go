@@ -32,10 +32,10 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	return nil
 }
 
-func (app *application) readIDParam(r *http.Request) (int, error) {
+func (app *application) readIDParam(r *http.Request, paramName routeParam) (int, error) {
 	vars := mux.Vars(r)
 
-	id, err := strconv.Atoi(vars["deckId"])
+	id, err := strconv.Atoi(vars[string(paramName)])
 
 	if err != nil {
 		return 0, err
